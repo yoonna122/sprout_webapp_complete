@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <title>스푸라우투🌱</title>
+  <link rel="stylesheet" href="/static/style.css" />
+  <link href="https://fonts.googleapis.com/css2?family=Jua&display=swap" rel="stylesheet" />
+</head>
+<body>
+  <!-- 죽음 상태 오버레이 -->
+  <div id="overlay"></div>
+
+  <div class="container">
+    <div id="timer"></div>
+
+    <div class="speech">
+      <img class="speech-img" src="/static/images/speech_bubble_icon.png" alt="말풍선" />
+      <div id="speech-text"></div>
+    </div>
+
+    <div class="plant-box">
+      <img id="plant" src="/static/images/plant_1_seed.png" alt="식물" />
+    </div>
+
+    <div id="score"></div>
+
+    <div class="buttons">
+      <button id="waterBtn" class="icon-button">
+        <img src="/static/images/water_button.png" alt="물주기" />
+      </button>
+      <button id="sunBtn" class="icon-button">
+        <img src="/static/images/sunlight_button.png" alt="햇빛주기" />
+      </button>
+      <button id="attackBtn">괴롭히기</button>
+    </div>
+
+    <button id="resetBtn" style="display:none;">새싹 다시 입양하기</button>
+  </div>
+
+  <script src="/static/script.js"></script>
+</body>
+</html>

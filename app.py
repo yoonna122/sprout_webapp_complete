@@ -1,0 +1,197 @@
+from flask import Flask, jsonify, render_template, session
+import random
+
+app = Flask(__name__)
+app.secret_key = "your_secret_key"
+
+def init_state():
+    session['score'] = 0
+    session['plant_stage'] = 1
+    session['prev_score'] = 0
+    session['prev_stage'] = 1
+
+def calculate_growth_stage(score):
+    if score < 20:
+        return 3
+    stage = (score - 20) // 20 + 3
+    return min(stage, 8)
+
+def update_plant_stage(prev_stage, prev_score, current_score):
+    # 점수 0 이하 즉시 죽음
+    if current_score <= 0:
+        return 11  # 죽음
+
+    # 씨앗(1)에서 발아(2) 고정 이행
+    if prev_stage == 1 and current_score > 0:
+        return 2
+
+    # 발아 이후(2~8) 성장/시듦 판단
+    if 2 <= prev_stage <= 8:
+        if current_score > prev_score:
+            return calculate_growth_stage(current_score)
+        elif current_score < prev_score:
+            return 9
+
+    # 시든 상태(9~11)
+    if 9 <= prev_stage <= 11:
+        if current_score > prev_score:
+            return calculate_growth_stage(current_score)
+        else:
+            return min(prev_stage + 1, 11)
+
+    # 죽음 상태(11) 유지
+    if prev_stage == 11:
+        return 11
+
+    return prev_stage
+
+@app.route('/')
+def index():
+    if 'score' not in session or 'plant_stage' not in session:
+        init_state()
+    return render_template('index.html')
+
+@app.route('/increase_score')
+def increase_score():
+    if 'score' not in session:
+        init_state()
+    prev_score = session.get('score', 0)
+    prev_stage = session.get('plant_stage', 1)
+
+    increase = random.randint(1, 3)
+    current_score = prev_score + increase
+
+    current_stage = update_plant_stage(prev_stage, prev_score, current_score)
+
+    session['prev_score'] = prev_score
+    session['prev_stage'] = prev_stage
+    session['score'] = current_score
+    session['plant_stage'] = current_stage
+
+    return jsonify(score=current_score, plant_stage=current_stage)
+
+@app.route('/decrease_score')
+def decrease_score():
+    if 'score' not in session:
+        init_state()
+    prev_score = session.get('score', 0)
+    prev_stage = session.get('plant_stage', 1)
+
+    decrease = 5
+    current_score = prev_score - decrease
+
+    current_stage = update_plant_stage(prev_stage, prev_score, current_score)
+
+    session['prev_score'] = prev_score
+    session['prev_stage'] = prev_stage
+    session['score'] = current_score
+    session['plant_stage'] = current_stage
+
+    return jsonify(score=current_score, plant_stage=current_stage)
+
+@app.route('/decrease_score_by_attack')
+def decrease_score_by_attack():
+    if 'score' not in session:
+        init_state()
+    prev_score = session.get('score', 0)
+    prev_stage = session.get('plant_stage', 1)
+
+    decrease = 10
+    current_score = prev_score - decrease
+
+    current_stage = update_plant_stage(prev_stage, prev_score, current_score)
+
+    session['prev_score'] = prev_score
+    session['prev_stage'] = prev_stage
+    session['score'] = current_score
+    session['plant_stage'] = current_stage
+
+    return jsonify(score=current_score, plant_stage=current_stage)
+
+@app.route('/reset')
+def reset():
+    init_state()
+    score = session['score']
+    stage = session['plant_stage']
+    return jsonify(score=score, plant_stage=stage)
+
+@app.route('/get_message/<category>')
+def get_message(category):
+    messages = {
+        "mood": [
+            "스푸라우투 기분 좋음ㅋㅎ",
+            "ㅇㅇ 지금 상태 ㄱㅊ",
+            "연 나 잘 살고 있음ㅋㅎ",
+            "이상한 윤라고동 안 봐서 행복",
+            "살아는 있음",
+            "응 개삐짐 ~ㅋㅋㅋㅋㅋ",
+            "빛 부족하면 죽는 거 알면서 왜 안 줘 연ㅜㅜㅜㅜ",
+            "요즘 시련 너무 많음ㅋㅋㅋㅋㅋ 물도 없음ㅋㅋㅋㅋㅋ",
+            "삶의 의지가 줄어들고 있읍니다...ㅋㅎㅋㅎㅋㅎㅋㅎ",
+            "연아 나좀 슬픔",
+            "맨탈 다뒤져씀",
+            "물도 햇빛도 없었으면 차라리 돌이었지ㅋㅋㅋㅋㅋ"
+        ],
+        "water": [
+            "물 조아~ㅋㅎ",
+            "시원행ㅎㅎ",
+            "오늘도 취한다ㅋㅋㅋ",
+            "C₂H₅OH 수액 내놔",
+            "헛개수....해장...",
+            "소맥 비율 오늘 감 왔음ㅋㅋㅋ",
+            "아 미쏘냐 감없네 , 시쏘로 ㄱㄱ",
+            "소주 먹고싶,",
+            "얼음물로 줘",
+            "헉 시원하다 뭐야 감탄중ㅋㅋㅋㅋㅋ",
+            "이건... C₂H₅OH 아니야?? ㅋㅋㅋ",
+            "물 맛이 이상한데 ㅋㅎ",
+            "윤텐더인가 했는데 그냥 물이네",
+            "이제 이게 진짜 C₂H₅OH 맞지?",
+            "물 주는척하고 술준거 또 걸림ㅋ"
+        ],
+        "sunlight": [
+            "햇빛 완전 실화냐ㅋㅎ",
+            "광합성 ㄱㄱ",
+            "나 좀 빛나?ㅋㅋㅋ",
+            "마라탕에 꿔바로우 각임",
+            "마라샹궈에 크림새우 가자",
+            "지금 분위기 연어각인데 왜 안 챙겨줌",
+            "생연어 필렛이면 지금 바로 뜯는다 ㄱㄱㄱㅋㅋㅋ",
+            "크림새우랑 마라샹궈 조합 ㄹㅈㄷ",
+            "짜장면 각인데 뭔가 부족함",
+            "마라탕에 꿔바로우 조합 ㄹㅈㄷㅋㅋㅋㅋㅋ",
+            "로제마샹에 크림새우까지ㄱㄱㄱ,",
+            "짜장면 각",
+            "당근ㄱ단ㄷ긍당근",
+            "불닭소스.",
+            "코스트코 연어....통으로...."
+        ],
+        "attack": [
+            "야 아프자나;;",
+            "너 왜그래 진짜",
+            "연... 실망이야",
+            "나 때리면 안 됨ㅜㅜ",
+            "얘 뭐함?",
+            "진심 서운ㅋㅋ",
+            "뭐함? 지금 괴롭힘?",
+            "짜증나니까 관두셈ㅋ",
+            "아 이건 좀 아닌 듯",
+            "연... 진심이야?",
+            "와 진짜 너무한다",
+            "내가 뭘 그렇게 잘못했냐 ㅋㅎ"
+        ],
+        "death": [
+            "너님은 날 죽였어... 새로운 씨앗을 입양해야 합니다."
+        ]
+    }
+
+    import random
+    message = random.choice(messages.get(category, [""]))
+
+    return jsonify(message=message)
+
+
+if __name__ == "__main__":
+    import os
+    port = int(os.environ.get("PORT", 5001))
+    app.run(host="0.0.0.0", port=port, debug=True)
